@@ -8,9 +8,13 @@ import re
 import random
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+
 def format_author_name(author_name):
-    """Format author name to match DBLP's URL encoding."""
-    return author_name.replace(" ", "_")
+    """Format author name for DBLP API queries by removing dots and replacing spaces with underscores."""
+    author_name = re.sub(r"\.\s*", "_", author_name)  # Remove dots in initials and replace with underscore
+    return author_name.replace(" ", "_")  # Replace spaces with underscores
+
+
 
 def get_dblp_venue_url(venue_key):
     """Generate the DBLP venue page URL based on the publication key."""
@@ -171,7 +175,7 @@ def main():
             continue
         print(f"Fetching publications for {author}...")
         results[author] = query_dblp(author)
-        time.sleep(random.randint(2, 5))
+        time.sleep(random.randint(2, 10))
 
 
     with open("publications-dblp.json", "w", encoding="utf-8") as f:

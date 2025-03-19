@@ -12,7 +12,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 def format_author_name(author_name):
     """Format author name for DBLP API queries by removing dots and replacing spaces with underscores."""
     author_name = re.sub(r"\.\s*", "_", author_name)  # Remove dots in initials and replace with underscore
-    return author_name.replace(" ", "_")  # Replace spaces with underscores
+    return author_name.replace(" ", "_").replace("-", "_")  # Replace spaces with underscores
 
 
 
@@ -55,7 +55,7 @@ def get_venue_metadata(venue_url, venue_name, pub_type):
 def query_dblp(author_name, max_retries=5, backoff_factor=2):
     """Query DBLP for an author's publications, ensuring full author match and filtering by year >= 2020."""
     formatted_name = format_author_name(author_name)
-    url = f"https://dblp.org/search/publ/api?q=author:{formatted_name}&h=100&format=xml"
+    url = f"https://dblp.org/search/publ/api?q=author:{formatted_name}&h=1000&format=xml"
     print(f"URL: {url}")
     for attempt in range(max_retries):
         try:
@@ -72,7 +72,7 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
                     continue  # Skip this entry
 
                 # Filter out publications before 2020
-                if year.isdigit() and int(year) < 2020:
+                if year.isdigit() and int(year) < 2013:
                     continue
 
                 # Extract venue details
@@ -179,8 +179,9 @@ def main():
         res = query_dblp(author)
         print(f"Total of publications {len(res)}")
         results[author] = res    
-        time.sleep(random.randint(2, 10))
-
+        print("Waiting for the next request.")
+        time.sleep(3*60)
+        print("continuing...")
 
     with open("publications-dblp.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)

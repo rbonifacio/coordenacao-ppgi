@@ -56,7 +56,7 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
     """Query DBLP for an author's publications, ensuring full author match and filtering by year >= 2020."""
     formatted_name = format_author_name(author_name)
     url = f"https://dblp.org/search/publ/api?q=author:{formatted_name}&h=100&format=xml"
-
+    print(f"URL: {url}")
     for attempt in range(max_retries):
         try:
             response = requests.get(url, timeout=10)
@@ -67,6 +67,9 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
             for hit in root.findall(".//hit"):
                 title = hit.find(".//title").text if hit.find(".//title") is not None else "Unknown Title"
                 year = hit.find(".//year").text if hit.find(".//year") is not None else "Unknown Year"
+
+                if any(word in title.lower() for word in ["editorial", "frontmatter"]):
+                    continue  # Skip this entry
 
                 # Filter out publications before 2020
                 if year.isdigit() and int(year) < 2020:
@@ -81,11 +84,10 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
                 authors = [e.text for e in hit.findall(".//author")]
 
                 # Ensure the exact author name is in the list of authors
-                if author_name not in authors:
-                    continue
+                #if author_name not in authors:
+                #    continue
 
                 pub_type = "Conference" if key.startswith("conf/") else "Journal" if key.startswith("journals/") else "Other"
-#                qualis = query_qualis(venue_full) if args.qualis else "Unknown"
 
                 # Fetch correct venue name & ISSN
                 venue_url = get_dblp_venue_url(key)
@@ -93,6 +95,7 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
                     venue_full, issn = get_venue_metadata(venue_url, venue_full, pub_type)
                 else:
                     issn = "N/A"
+                    continue
 
                 publications.append({
                     "title": title,
@@ -102,7 +105,6 @@ def query_dblp(author_name, max_retries=5, backoff_factor=2):
                     "venue_url": venue_url,  # Direct link to DBLP venue page
                     "issn": issn,  # Now correctly fetching ISSN for journals
                     "type": pub_type,
- #                   "qualis": qualis,
                     "authors": authors
                 })
 
@@ -174,7 +176,9 @@ def main():
         if author.startswith("#"):
             continue
         print(f"Fetching publications for {author}...")
-        results[author] = query_dblp(author)
+        res = query_dblp(author)
+        print(f"Total of publications {len(res)}")
+        results[author] = res    
         time.sleep(random.randint(2, 10))
 
 

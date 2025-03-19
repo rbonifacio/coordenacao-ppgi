@@ -16,7 +16,7 @@ def parse_qualis_file(qualis_filename):
     qualis_dict = {}
     with open(qualis_filename, "r", encoding="utf-8") as f:
         for line in f:
-            match = re.match(r"^([\d]{4}-[\d]{3}[\dX]),\s*(.+?),\s*(A[1-4]|B[1-4]|C)$", line.strip())
+            match = re.match(r"^([\d]{4}-[\d]{3}[\dX]);\s*(.+?);\s*(A[1-4]|B[1-4]|C)$", line.strip())
             if match:
                 issn, title, qualis = match.groups()
                 qualis_dict[title.upper()] = {"ISSN": issn, "Qualis CAPES": qualis}

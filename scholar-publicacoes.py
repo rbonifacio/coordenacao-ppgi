@@ -1,17 +1,25 @@
+import os
 import json
 import time
 import random
 from serpapi import GoogleSearch
 
+
+class MissingEnvironmentVariable(Exception):
+    pass
+
 # Your SerpApi Key (replace with your actual key)
-SERPAPI_KEY = "your_serpapi_key"
+SERPAPI_KEY = os.environ["SERPAPI_KEY"]
+
+if SERPAPI_KEY is None:
+    raise MissingEnvironmentVariable(f"{var_name} does not exist")
 
 def get_author_publications(author_name):
     """Retrieve all publications for a given author using SerpApi."""
     # Step 1: Find the author's Google Scholar ID
     search_params = {
         "engine": "google_scholar_profiles",
-        "api_key": "ea029055b8da0a1496cf5541db975a280deed4e95b717d62b3568603336388eb",
+        "api_key": SERPAPI_KEY,
         "hl": "en",
         "mauthors": author_name
     }
@@ -32,7 +40,7 @@ def get_author_publications(author_name):
     while True:
         params = {
             "engine": "google_scholar_author",
-            "api_key": "ea029055b8da0a1496cf5541db975a280deed4e95b717d62b3568603336388eb",
+            "api_key": SERPAPI_KEY,
             "hl": "en",
             "author_id": author_id,
             "start": start,  # Pagination offset

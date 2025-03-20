@@ -1,0 +1,33 @@
+---
+title: "ppgi-analise-producao"
+output: html_document
+date: "2025-03-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(sqldf)
+
+setwd(".")
+```
+
+## Carrega o Dataset
+
+```{r}
+periodicos <- read.csv("data/2025/qualis_artigos_publicados_periodicos.csv", head=T, sep=",")
+
+colnames(periodicos)
+nrow(periodicos)
+
+sqldf("select ano, qualis, count(*) 
+       from periodicos
+       where qualis in ('A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4') 
+       group by ano, qualis")
+
+
+sqldf("select ano, count(*) 
+       from periodicos
+       where qualis in ('A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4') 
+       group by ano")
+
+```

@@ -1,8 +1,11 @@
 import csv
 from unidecode import unidecode
 
-periodicos = "data/2025/qualis_artigos_todos.csv"
-discentes = "data/2025/discentes-ativos.csv"
+periodicos_csv = "data/2025/qualis_artigos_todos.csv"
+#periodicos_csv = "data/2025/qualis_artigos_publicados_periodicos.csv"
+
+discentes_csv = "data/2025/discentes-ativos.csv"
+egressos_csv = "data/2025/egressos.csv"
 
 pesos = { 'A1' : 1.0, 'A2' : 0.875, 'A3' : 0.750, 'A4' : 0.625, 'B1' : 0.5, 'B2' : 0.2, 'B3' : 0.1, 'B4' : 0.05 } 
 
@@ -17,50 +20,71 @@ docentes = [24, 30, 31]
 totalAno = [0, 0, 0, 0]
 
 
-STOPWORDS = {"da", "de", "do", "das", "dos", "e"}
+STOPWORDS = {"da", "de", "do", "das", "dos", "e", "jr", "junior", "filho", "neto"}
 
 def normalize_name(name):
     """Removes accents and converts to lowercase"""
-    return unidecode(name).lower()
+    return unidecode(name).lower().replace(".", "")
 
 def split_name(name):
     """Splits a full name into individual words, ignoring stopwords"""
-    words = set(normalize_name(name).split())
-    return words - STOPWORDS  # Remove stopwords
+    words = normalize_name(name).split()
+    for s in STOPWORDS:
+        if s in words:
+            words.remove(s)
+    return words
 
 def is_match(name1, name2, min_matches=2):
     """Checks if two names match based on common words"""
     words1 = split_name(name1)
     words2 = split_name(name2)
-    common = words1 & words2  # Find common words
-    return len(common) >= min_matches
+    # if words1[0] == words2[0] and words1[-1] == words2[-1]:
+    #     return True
+    words1 = set(words1)
+    words2 = set(words2)
+    matches = len(words1 & words2)
+    return matches >= min_matches and len(words1) - matches <= 1 and matches and len(words2) - matches <= 1
 
-discentes_ativos = []
+discentes = set()
 
-with open(discentes) as csvfile:
+with open(discentes_csv) as csvfile:
     heading = next(csvfile)
     data = csv.reader(csvfile, delimiter=",", quotechar="\"")
     for row in data:
         (mat, nome, nivel) = row
-        discentes_ativos.append(nome)
+        if nivel == "Doutorado":
+            discentes.add(nome)
 
-def verifica_autor_discente(lista_de_autores):
+with open(egressos_csv) as csvfile:
+    heading = next(csvfile)
+    data = csv.reader(csvfile, delimiter=",", quotechar="\"")
+    for row in data:
+        (titulo,egresso,tipo,data,quadrienio) = row
+        if tipo == "TESE":
+            discentes.add(egresso)
+
+discentes_pub = set()
+
+def verifica_autor_discente(title, lista_de_autores):
     for autor in lista_de_autores:
-        for discente in discentes_ativos:
-            print(f"comparing {autor} with {discente}")
-            if is_match(discente, autor):
-                print(discente)
+        for discente in discentes:
+            n1 = normalize_name(autor).split()[0]
+            n2 = normalize_name(discente).split()[0]
+            if n1 == n2 and is_match(discente, autor):
+                discentes_pub.add(discente)
                 return True
     return False
         
-with open(periodicos) as csvfile:
+with open(periodicos_csv) as csvfile:
     heading = next(csvfile) 
     data = csv.reader(csvfile, delimiter=',', quotechar="\"")
     for row in data:
         (titulo, ano, veiculo, acronimo,tipo,autores,issn,qualis) = row
+        # (titulo, ano, veiculo, acronimo,autores,issn,qualis) = row
+       
         lista_de_autores = autores.split(";")
 
-        autor_discente = verifica_autor_discente(lista_de_autores)
+        autor_discente = verifica_autor_discente(titulo, lista_de_autores)
 
         if qualis in pesos:
             artigos.add((titulo, ano, autor_discente, qualis))
@@ -89,8 +113,9 @@ for artigo in artigos:
         totalG = totalG + 1
         ig = ig + pesos[qualis]
 
-    if autor_discente:
-        ds = ds + 1
+
+    if (qualis.startswith("A")) and autor_discente:
+        ds = ds+1
         
     resumo[idx] = (q, (totalR, totalG, ir, ig, a1, a2, ds))    
 
@@ -107,7 +132,6 @@ for idx in range(len(resumo)):
     
 print(totalAno)
 
+print(discentes_pub)
 
-w1 = "WALTER LUCAS MONTEIRO DE MENDONCA"
-w2 = "Walter Lucas Monteiro de Mendonça"
-print(f"Matching {w1}, {w2}, {is_match(w1, w2)}")
+print(len(discentes_pub))

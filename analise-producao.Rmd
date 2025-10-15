@@ -19,15 +19,86 @@ periodicos <- read.csv("data/2025/qualis_artigos_publicados_periodicos.csv", hea
 colnames(periodicos)
 nrow(periodicos)
 
-sqldf("select ano, qualis, count(*) 
+sqldf("select ano, qualis, count(distinct Titulo) 
        from periodicos
-       where qualis in ('A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4') 
+       where qualis in ('A1') 
+         and ano between 2020 and 2024 
        group by ano, qualis")
+
+sqldf("select count(distinct Titulo) 
+       from periodicos
+       where qualis in ('A1', 'A2', 'A3', 'A4') 
+         and ano between 2020 and 2024 
+       ")
 
 
 sqldf("select ano, count(*) 
        from periodicos
        where qualis in ('A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4') 
        group by ano")
+```
+
+```{r}
+egressos <- read.csv("data/2025/egressos.csv")
+discentes <- read.csv("data/2025/discentes-ativos.csv")
+questionario <- read.csv("data/2025/questionario-egressos.csv")
+docentes <- read.csv("data/2025/docentes-consolidacao.csv")
+
+colnames(egressos)
+nrow(egressos)
+colnames(discentes)
+nrow(discentes)
+colnames(questionario)
+nrow(questionario)
+colnames(docentes)
+nrow(docentes)
+
+sqldf("select quadrienio, tipo, count(*)
+       from egressos 
+       group by quadrienio, tipo")
+
+sqldf("select egresso, count(*) as total 
+       from egressos 
+       group by egresso
+       having total > 1")
+
+sqldf("select tipo, count(*) as total 
+       from egressos 
+       group by tipo")
+
+sqldf("select nome 
+       from discentes d, egressos e
+       where d.nivel = 'Doutorado' 
+         and d.nome = e.egresso")
+
+
+sqldf("select count(*) 
+       from discentes d
+       where d.nivel = 'Doutorado'")
+
+
+
+##  [1] "Id"              "Inicio"          "Fim"             "Email"          
+##  [5] "NomeCompleto"    "Nivel"           "Titulacao"       "Atuacao"        
+##  [9] "Orgao"           "ImportanciaPPGI"
+
+sqldf("select Nivel, Atuacao, count(*) 
+       from questionario 
+       group by Nivel, Atuacao")
+
+sqldf("select Nivel, count(*) from questionario group by Nivel")
+
+
+
+
+##  [1] "Ano"                   "Docente"               "MestradoAcademico"    
+##  [4] "MestradoProfissional"  "Doutorado"             "DoutoradoProfissional"
+##  [7] "ProdBibliograficas"    "ProdTecnicas"          "ProdArtisticas"       
+## [10] "TurmasMinistradas"     "ProjetosPesquisa"
+
+
+sqldf("select Ano, sum(ProdBibliograficas), max(ProdBibliograficas), avg(ProdBibliograficas), stdev(ProdBibliograficas)
+       from docentes
+       group by Ano")
 
 ```
